@@ -3,10 +3,10 @@
 ; Non-commercial use only
 
 #define MyAppName "bULLET"
-#define MyAppVersion "3.2"
-#define MyAppPublisher "My Company, Inc."
-#define MyAppURL "https://www.example.com/"
-#define MyAppExeName "bullet-ver3.2.exe"
+#define MyAppVersion "4.2"
+#define MyAppPublisher "jesusCOOp"
+#define MyAppURL "dont have web"
+#define MyAppExeName "bullet-ver4.2.exe"
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".myp"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
@@ -14,7 +14,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{C294F006-4E25-4EBE-96CD-C4B206173348}
+AppId={{82B366A7-35D5-4955-B870-BD78072E6559}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -22,7 +22,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\bULLET VER 3.2
+DefaultDirName={autopf}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; "ArchitecturesAllowed=x64compatible" specifies that Setup cannot run
 ; on anything but x64 and Windows 11 on Arm.
@@ -36,13 +36,12 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputDir=D:\Game-in-terminal-corornel-and-gil
-OutputBaseFilename=bULLET
+OutputDir=D:\Game-in-terminal-corornel-and-gil\PYTHON\Nueva carpeta
+OutputBaseFilename=mysetup
 SolidCompression=yes
-WizardStyle=modern dark
+WizardStyle=classic dark
 
 [Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
