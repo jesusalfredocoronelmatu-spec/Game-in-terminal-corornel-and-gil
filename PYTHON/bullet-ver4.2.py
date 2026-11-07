@@ -81,17 +81,21 @@ class Juego:
     def dibujar(self):
         self.stdscr.clear()
         arma = self.armas[self.arma_actual]
-        
-        # HUD
+       # HUD
         titulo = f"=== LABERINTOS DE MONSTRUOS | NIVEL x{self.mult_vida} ===" if not self.fase_jefe else f"=== ¡BATALLA CONTRA EL JEFE! (NIVEL x{self.mult_vida}) ==="
         self.stdscr.addstr(0, 0, titulo, curses.color_pair(6) | curses.A_BOLD)
         self.stdscr.addstr(1, 0, f"PUNTAJE: {self.puntaje:05d} | Restantes para Jefe: {max(0, self.enemigos_restantes)}", curses.color_pair(6))
         self.stdscr.addstr(2, 0, f"Arma: {arma['nombre']} Nv.{arma['nvl']} ({arma['muni']}) | Armadura: {self.armadura}", curses.color_pair(2))
         self.stdscr.addstr(3, 0, f"Granadas[X]: {self.granadas} | Bombardeo[B]: {self.bombardeos} | Cambiar[Espacio]", curses.color_pair(5))
+        
+        # NUEVA LÍNEA DE CONTROLES
+        self.stdscr.addstr(4, 0, "Mover: recto:WASD/diagonal:QEZC | Disparar: recto:IJKL/diagonal:UONM | Tienda: [T]", curses.color_pair(6))
+        
+        # Alertas o separador desplazados a la línea 5
         if self.msg_alerta:
-            self.stdscr.addstr(4, 0, f">> {self.msg_alerta} <<", curses.color_pair(5) | curses.A_BOLD)
+            self.stdscr.addstr(5, 0, f">> {self.msg_alerta} <<", curses.color_pair(5) | curses.A_BOLD)
         else:
-            self.stdscr.addstr(4, 0, "-" * 60)
+            self.stdscr.addstr(5, 0, "-" * 75)
 
         # Mapa
         for y, fila in enumerate(self.mapa):
