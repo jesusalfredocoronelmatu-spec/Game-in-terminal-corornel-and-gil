@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['PYTHON/bullet-ver4.2.py'],
+    ['bullet-ver4.3.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='bullet-ver4.2',
+    name='bullet-ver4.3',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
