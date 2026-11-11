@@ -11,7 +11,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import java.io.IOException;
 import java.util.*;
 
-public class JuegoTerminal {
+public class Bullet {
 
     // --- CONFIGURACIÓN DE TECLAS Y DIRECCIONES ---
     private static final Map<Character, int[]> MOVIMIENTO = new HashMap<>();
@@ -35,7 +35,7 @@ public class JuegoTerminal {
     static class Arma {
         String nombre;
         int nvl;
-        int muni; // -1 indica munición infinita
+        int muni;
 
         Arma(String nombre, int nvl, int muni) {
             this.nombre = nombre;
@@ -79,8 +79,10 @@ public class JuegoTerminal {
     private int turnos;
     private String msgAlerta = "";
 
-    public JuegoTerminal() throws IOException {
-        Terminal terminal = new DefaultTerminalFactory().createTerminal();
+    public Bullet() throws IOException {
+        Terminal terminal = new DefaultTerminalFactory()
+                .setPreferTerminalEmulator(true)
+                .createTerminal();
         this.screen = new TerminalScreen(terminal);
         this.screen.startScreen();
         this.screen.setCursorPosition(null);
@@ -141,7 +143,6 @@ public class JuegoTerminal {
         Arma arma = armas.get(armaActual);
         String muniStr = (arma.muni == -1) ? "Inf" : String.valueOf(arma.muni);
 
-        // HUD
         String titulo = !faseJefe ? 
             "=== LABERINTOS DE MONSTRUOS | NIVEL x" + multVida + " ===" : 
             "=== ¡BATALLA CONTRA EL JEFE! (NIVEL x" + multVida + ") ===";
@@ -172,7 +173,6 @@ public class JuegoTerminal {
             tg.putString(0, 5, "---------------------------------------------------------------------------");
         }
 
-        // Renderizado de Mapa con Colores ANSI
         for (int y = 0; y < 15; y++) {
             for (int x = 0; x < 40; x++) {
                 char ch = mapa[y][x];
@@ -334,7 +334,6 @@ public class JuegoTerminal {
                 if (secuenciaTruco.length() > 10) {
                     secuenciaTruco.delete(0, secuenciaTruco.length() - 10);
                 }
-                // --- TRUCO SECRETO TRADUCIDO TAL CUAL ---
                 if (secuenciaTruco.toString().equals("wwssadadba")) {
                     puntaje += 100000000;
                     secuenciaTruco.setLength(0);
@@ -408,7 +407,7 @@ public class JuegoTerminal {
         if (armaActual == 3) arma.muni -= 3;
         else if (armaActual == 2 || armaActual == 4) arma.muni -= 1;
 
-        if (armaActual == 2) { // Escopeta
+        if (armaActual == 2) {
             msgAlerta = "¡Boom de Escopeta!";
             int dano = 2 * arma.nvl;
             List<int[]> afectados = new ArrayList<>();
@@ -466,7 +465,7 @@ public class JuegoTerminal {
             mapa[py][px] = '@';
             return;
 
-        } else if (armaActual == 4) { // Cohete
+        } else if (armaActual == 4) {
             int bx = px + bxDir;
             int by = py + byDir;
             while (mapa[by][bx] == ' ') {
@@ -481,7 +480,6 @@ public class JuegoTerminal {
             return;
         }
 
-        // Pistola y Ráfaga
         for (int b = 0; b < balas; b++) {
             int bx = px + bxDir;
             int by = py + byDir;
@@ -596,7 +594,6 @@ public class JuegoTerminal {
                         continue;
                     } else {
                         multVida++;
-                        // --- ESCALADO POR X 1.5 REDONDEADO ---
                         enemigosMeta = (int) Math.round(enemigosMeta * 1.5);
                         msgAlerta = "¡JEFE DERROTADO! SUBES DE NIVEL (Meta: " + enemigosMeta + ")";
                         dibujar();
@@ -608,7 +605,7 @@ public class JuegoTerminal {
 
                 dibujar();
 
-                KeyStroke t = screen.readInput(); // Lectura por turnos
+                KeyStroke t = screen.readInput();
                 char c = Character.toLowerCase(t.getCharacter() != null ? t.getCharacter() : ' ');
                 boolean turnoValido = false;
 
@@ -683,7 +680,7 @@ public class JuegoTerminal {
 
     public static void main(String[] args) {
         try {
-            new JuegoTerminal().mainLoop();
+            new Bullet().mainLoop();
         } catch (IOException e) {
             e.printStackTrace();
         }
