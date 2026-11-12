@@ -27,19 +27,39 @@ public class Main {
         }
     }
 
+    public static void mostrarInstrucciones() {
+        borrarPantalla();
+        System.out.println("==================================================");
+        System.out.println("           MANUAL DE CONTROLES DEL JUEGO          ");
+        System.out.println("==================================================");
+        System.out.println("  MOVIMIENTO:");
+        System.out.println("  - Arriba    [ W ]  ( ^ )          - Arriba-Izq [ Q ]");
+        System.out.println("  - Abajo     [ S ]  ( v )          - Arriba-Der [ E ]");
+        System.out.println("  - Izquierda [ A ]  ( < )          - Abajo-Izq  [ Z ]");
+        System.out.println("  - Derecha   [ D ]  ( > )          - Abajo-Der  [ C ]");
+        System.out.println("");
+        System.out.println("  DISPARO:");
+        System.out.println("  - Arriba    [ I ]  ( ^ )          - Arriba-Izq [ U ]");
+        System.out.println("  - Abajo     [ K ]  ( v )          - Arriba-Der [ O ]");
+        System.out.println("  - Izquierda [ J ]  ( < )          - Abajo-Izq  [ N ]");
+        System.out.println("  - Derecha   [ L ]  ( > )          - Abajo-Der  [ M ]");
+        System.out.println("");
+        System.out.println("  ACCIONES Y ESPECIALES:");
+        System.out.println("  - Cambiar Arma: [ ESPACIO ]       - Tienda: [ T ]");
+        System.out.println("  - Granada:      [ X ]             - Bombardeo: [ B ]");
+        System.out.println("==================================================");
+        System.out.println("        [ Presiona ENTER para regresar ]");
+        scanner.nextLine();
+    }
+
     public static void mostrarMenuPrincipal() {
         borrarPantalla();
         System.out.println("==================================================");
-        System.out.println("       LABERINTOS DE MONSTRUOS: ARSENAL TOTAL     ");
+        System.out.println("        LABERINTOS DE MONSTRUOS: ARSENAL TOTAL      ");
         System.out.println("==================================================");
         System.out.println("             [ Presiona ENTER para INICIAR ]      ");
+        System.out.println("             [ Presiona H   para ver el MANUAL ]  ");
         System.out.println("             [ Presiona P   para SALIR ]          ");
-        System.out.println("==================================================");
-        System.out.println(" Controles:");
-        System.out.println(" - Mover: W, A, S, D (Recto) | Q, E, Z, C (Diag)");
-        System.out.println(" - Disparo: I, J, K, L (Recto) / U, O, N, M (Diag)");
-        System.out.println(" - Acciones: [Espacio] Cambiar Arma | [T] Tienda");
-        System.out.println(" - Especiales: [X] Granada | [B] Bombardeo Aéreo");
         System.out.println("==================================================");
     }
 
@@ -77,7 +97,6 @@ public class Main {
         int multVida = 1;
         int enemigosRestantes = 10;
         int lastFx = 1, lastFy = 0;
-        int danoDisparo;
         int vidaBase;
         int danoRecibido;
 
@@ -96,6 +115,8 @@ public class Main {
                 tecla = scanner.nextLine().trim();
                 if (tecla.isEmpty()) {
                     enMenu = false;
+                } else if (tecla.equalsIgnoreCase("h")) {
+                    mostrarInstrucciones();
                 } else if (tecla.equalsIgnoreCase("esc") || tecla.equalsIgnoreCase("p")) {
                     juegoTerminado = true;
                     enMenu = false;
@@ -274,7 +295,6 @@ public class Main {
                                     if (granadas > 0) {
                                         granadas--;
                                         turnoValido = true;
-                                        danoDisparo = 5;
                                         bX = px + (lastFx * 2);
                                         bY = py + (lastFy * 2);
                                         for (int rDy = -1; rDy <= 1; rDy++) {
