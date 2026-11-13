@@ -361,16 +361,71 @@ class Juego:
                 else:
                     self.mapa[ny][nx] = 'B' if ene == self.jefe else (str(ene['hp']) if ene['hp'] <= 9 else 'M')
 
+    def mostrar_instrucciones(self):
+        self.stdscr.clear()
+        lineas = [
+            "==================================================",
+            "           MANUAL DE CONTROLES DEL JUEGO          ",
+            "==================================================",
+            "  MOVIMIENTO:",
+            "  - Arriba    [ W ]  ( ^ )          - Arriba-Izq [ Q ]",
+            "  - Abajo     [ S ]  ( v )          - Arriba-Der [ E ]",
+            "  - Izquierda [ A ]  ( < )          - Abajo-Izq  [ Z ]",
+            "  - Derecha   [ D ]  ( > )          - Abajo-Der  [ C ]",
+            "",
+            "  DISPARO:",
+            "  - Arriba    [ I ]  ( ^ )          - Arriba-Izq [ U ]",
+            "  - Abajo     [ K ]  ( v )          - Arriba-Der [ O ]",
+            "  - Izquierda [ J ]  ( < )          - Abajo-Izq  [ N ]",
+            "  - Derecha   [ L ]  ( > )          - Abajo-Der  [ M ]",
+            "",
+            "  ACCIONES Y ESPECIALES:",
+            "  - Cambiar Arma: [ ESPACIO ]       - Tienda: [ T ]",
+            "  - Granada:      [ X ]             - Bombardeo: [ B ]",
+            "==================================================",
+            "        [ Presiona cualquier tecla para regresar ]"
+        ]
+        
+        for i, linea in enumerate(lineas):
+            try:
+                if i in [0, 2, 18]:
+                    color = curses.color_pair(1) | curses.A_BOLD # Cyan
+                elif i == 1:
+                    color = curses.color_pair(5) | curses.A_BOLD # Amarillo
+                elif i == 19:
+                    color = curses.color_pair(2) | curses.A_BOLD # Verde
+                elif "MOVIMIENTO:" in linea or "DISPARO:" in linea or "ACCIONES" in linea:
+                    color = curses.color_pair(4) | curses.A_BOLD # Magenta
+                else:
+                    color = curses.color_pair(6) # Blanco
+                
+                self.stdscr.addstr(i + 2, 5, linea, color)
+            except curses.error:
+                pass
+                
+        self.stdscr.refresh()
+        curses.flushinp()
+        self.stdscr.getch()
+
     def main_loop(self):
         while True:
             self.stdscr.clear()
             self.stdscr.addstr(2, 5, "=== LABERINTOS DE MONSTRUOS ===", curses.color_pair(2) | curses.A_BOLD)
             self.stdscr.addstr(4, 5, "Presiona ENTER para Iniciar")
-            self.stdscr.addstr(5, 5, "Presiona P para Salir")
+            self.stdscr.addstr(5, 5, "Presiona H para ver el MANUAL")
+            self.stdscr.addstr(6, 5, "Presiona P para Salir")
             self.stdscr.refresh()
+            
             k = self.stdscr.getch()
-            if k in [ord('p'), ord('P'), 27]: break
-            if k not in [10, 13]: continue
+            c = chr(k).lower() if k < 256 else ""
+            
+            if k in [ord('p'), ord('P'), 27]: 
+                break
+            elif c == 'h':
+                self.mostrar_instrucciones()
+                continue
+            elif k not in [10, 13]: 
+                continue
 
             self.reiniciar_stats_globales()
             
@@ -387,7 +442,6 @@ class Juego:
                         continue
                     else:
                         self.mult_vida += 1
-                        # --- ESCALADO DE ENEMIGOS POR X 1.5 REDONDEADO ---
                         self.enemigos_meta = round(self.enemigos_meta * 1.5)
                         self.msg_alerta = f"¡JEFE DERROTADO! SUBES DE NIVEL (Meta: {self.enemigos_meta})"
                         self.dibujar()
@@ -397,9 +451,6 @@ class Juego:
 
                 self.dibujar()
                 
-                # ==========================================
-                # CORRECCIÓN: Limpiar el buffer de teclado
-                # ==========================================
                 curses.flushinp()
                 
                 t = self.stdscr.getch()
@@ -452,6 +503,7 @@ class Juego:
                 self.stdscr.addstr(7, 10, f"Puntaje Final: {self.puntaje}")
                 self.stdscr.addstr(9, 10, "Presiona cualquier tecla para volver al menú...")
                 self.stdscr.refresh()
+                curses.flushinp()
                 self.stdscr.getch()
 
 if __name__ == "__main__":

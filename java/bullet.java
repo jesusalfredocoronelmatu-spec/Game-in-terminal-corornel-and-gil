@@ -62,7 +62,7 @@ public class Bullet {
     private int puntaje;
     private int armadura;
     private int multVida;
-    private final Map<Integer, Arma> armas = new HashMap<>();
+    private final Map<Integer,Arma> armas = new HashMap<>();
     private int armaActual;
     private int granadas;
     private int bombardeos;
@@ -347,46 +347,16 @@ public class Bullet {
             Runnable accion = null;
 
             switch (ch) {
-                case '1':
-                    costo = 1000 * armadura;
-                    accion = () -> armadura++;
-                    break;
-                case '2':
-                    costo = 600;
-                    accion = () -> e.muni += 10;
-                    break;
-                case '3':
-                    costo = 800;
-                    accion = () -> r.muni += 30;
-                    break;
-                case '4':
-                    costo = 3000;
-                    accion = () -> c.muni += 1;
-                    break;
-                case '5':
-                    costo = 500;
-                    accion = () -> granadas += 3;
-                    break;
-                case '6':
-                    costo = 20000;
-                    accion = () -> bombardeos += 1;
-                    break;
-                case '7':
-                    costo = 500 * p.nvl;
-                    accion = () -> p.nvl++;
-                    break;
-                case '8':
-                    costo = 800 * e.nvl;
-                    accion = () -> e.nvl++;
-                    break;
-                case '9':
-                    costo = 800 * r.nvl;
-                    accion = () -> r.nvl++;
-                    break;
-                case '0':
-                    costo = 1000 * c.nvl;
-                    accion = () -> c.nvl++;
-                    break;
+                case '1': costo = 1000 * armadura; accion = () -> armadura++; break;
+                case '2': costo = 600; accion = () -> e.muni += 10; break;
+                case '3': costo = 800; accion = () -> r.muni += 30; break;
+                case '4': costo = 3000; accion = () -> c.muni += 1; break;
+                case '5': costo = 500; accion = () -> granadas += 3; break;
+                case '6': costo = 20000; accion = () -> bombardeos += 1; break;
+                case '7': costo = 500 * p.nvl; accion = () -> p.nvl++; break;
+                case '8': costo = 800 * e.nvl; accion = () -> e.nvl++; break;
+                case '9': costo = 800 * r.nvl; accion = () -> r.nvl++; break;
+                case '0': costo = 1000 * c.nvl; accion = () -> c.nvl++; break;
             }
 
             if (costo != -1 && puntaje >= costo && accion != null) {
@@ -484,6 +454,7 @@ public class Bullet {
             int bx = px + bxDir;
             int by = py + byDir;
             int dano = 1 * arma.nvl;
+
             while (true) {
                 if (mapa[by][bx] == '#') break;
                 else if (mapa[by][bx] != ' ') {
@@ -562,6 +533,39 @@ public class Bullet {
         }
     }
 
+    public void mostrarManual() throws IOException {
+        screen.clear();
+        tg.setForegroundColor(TextColor.ANSI.YELLOW);
+        tg.enableModifiers(SGR.BOLD);
+        tg.putString(5, 1, "==================================================");
+        tg.putString(5, 2, "             MANUAL DE CONTROLES DEL JUEGO        ");
+        tg.putString(5, 3, "==================================================");
+        tg.disableModifiers(SGR.BOLD);
+
+        tg.setForegroundColor(TextColor.ANSI.WHITE);
+        tg.putString(5, 5, "MOVIMIENTO:");
+        tg.putString(5, 6, "- Arriba     [ W ]  ( ^ )         - Arriba-Izq [ Q ]");
+        tg.putString(5, 7, "- Abajo      [ S ]  ( v )         - Arriba-Der [ E ]");
+        tg.putString(5, 8, "- Izquierda  [ A ]  ( < )         - Abajo-Izq  [ Z ]");
+        tg.putString(5, 9, "- Derecha    [ D ]  ( > )         - Abajo-Der  [ C ]");
+
+        tg.putString(5, 11, "DISPARO:");
+        tg.putString(5, 12, "- Arriba     [ I ]  ( ^ )         - Arriba-Izq [ U ]");
+        tg.putString(5, 13, "- Abajo      [ K ]  ( v )         - Arriba-Der [ O ]");
+        tg.putString(5, 14, "- Izquierda  [ J ]  ( < )         - Abajo-Izq  [ N ]");
+        tg.putString(5, 15, "- Derecha    [ L ]  ( > )         - Abajo-Der  [ M ]");
+
+        tg.putString(5, 17, "ACCIONES Y ESPECIALES:");
+        tg.putString(5, 18, "- Cambiar Arma: [ ESPACIO ]       - Tienda: [ T ]");
+        tg.putString(5, 19, "- Granada:      [ X ]             - Bombardeo: [ B ]");
+        
+        tg.setForegroundColor(TextColor.ANSI.GREEN);
+        tg.putString(5, 21, "[ Presiona CUALQUIER TECLA para regresar ]");
+        
+        screen.refresh();
+        screen.readInput();
+    }
+
     public void mainLoop() throws IOException {
         while (true) {
             screen.clear();
@@ -572,12 +576,20 @@ public class Bullet {
 
             tg.setForegroundColor(TextColor.ANSI.WHITE);
             tg.putString(5, 4, "Presiona ENTER para Iniciar");
-            tg.putString(5, 5, "Presiona P para Salir");
+            tg.putString(5, 5, "Presiona H para ver el MANUAL");
+            tg.putString(5, 6, "Presiona P para Salir");
             screen.refresh();
 
             KeyStroke k = screen.readInput();
             char kc = Character.toLowerCase(k.getCharacter() != null ? k.getCharacter() : ' ');
+            
             if (kc == 'p' || k.getKeyType() == KeyType.Escape) break;
+            
+            if (kc == 'h') {
+                mostrarManual();
+                continue;
+            }
+            
             if (k.getKeyType() != KeyType.Enter) continue;
 
             reiniciarStatsGlobales();
