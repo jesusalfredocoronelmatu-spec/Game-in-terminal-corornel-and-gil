@@ -1,17 +1,20 @@
-import com.googlecode.lanterna.SGR;
-import com.googlecode.lanterna.TextColor;
-import com.googlecode.lanterna.graphics.TextGraphics;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
-import com.googlecode.lanterna.screen.Screen;
-import com.googlecode.lanterna.screen.TerminalScreen;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import com.googlecode.lanterna.terminal.Terminal;
-
-import java.io.IOException;
 import java.util.*;
 
 public class Bullet {
+
+    // --- CÓDIGOS ANSI PARA COLORES Y CURSOR ---
+    private static final String RESET = "\u001B[0m";
+    private static final String BOLD = "\u001B[1m";
+    private static final String RED = "\u001B[31m";
+    private static final String GREEN = "\u001B[32m";
+    private static final String YELLOW = "\u001B[33m";
+    private static final String MAGENTA = "\u001B[35m";
+    private static final String CYAN = "\u001B[36m";
+    private static final String WHITE = "\u001B[37m";
+    private static final String CLEAR_SCREEN = "\u001B[2J\u001B[H";
+    private static final String CURSOR_HOME = "\u001B[H";
+    private static final String HIDE_CURSOR = "\u001B[?25l";
+    private static final String SHOW_CURSOR = "\u001B[?25h";
 
     // --- CONFIGURACIÓN DE TECLAS Y DIRECCIONES ---
     private static final Map<Character, int[]> MOVIMIENTO = new HashMap<>();
@@ -55,14 +58,11 @@ public class Bullet {
     }
 
     // --- ESTADO DEL JUEGO ---
-    private final Screen screen;
-    private final TextGraphics tg;
     private final Random random = new Random();
-
     private int puntaje;
     private int armadura;
     private int multVida;
-    private final Map<Integer,Arma> armas = new HashMap<>();
+    private final Map<Integer, Arma> armas = new HashMap<>();
     private int armaActual;
     private int granadas;
     private int bombardeos;
@@ -79,14 +79,22 @@ public class Bullet {
     private int turnos;
     private String msgAlerta = "";
 
-    public Bullet() throws IOException {
-        Terminal terminal = new DefaultTerminalFactory()
-                .setPreferTerminalEmulator(true)
-                .createTerminal();
-        this.screen = new TerminalScreen(terminal);
-        this.screen.startScreen();
-        this.screen.setCursorPosition(null);
-        this.tg = screen.newTextGraphics();
+    // --- LECTURA DE TECLA EN TIEMPO REAL (SIN ENTER) EN WINDOWS ---
+    private char leerTecla() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "powershell", "-NoProfile", "-Command",
+                "$k = [Console]::ReadKey($true); if ($k.Key -eq 'Escape') { [Console]::Write([char]27) } elseif ($k.Key -eq 'Enter') { [Console]::Write([char]13) } else { [Console]::Write($k.KeyChar) }"
+            );
+            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+            Process p = pb.start();
+            int c = p.getInputStream().read();
+            p.waitFor();
+            return (c == -1) ? ' ' : Character.toLowerCase((char) c);
+        } catch (Exception e) {
+            return ' ';
+        }
     }
 
     public void reiniciarStatsGlobales() {
@@ -139,68 +147,50 @@ public class Bullet {
     }
 
     public void dibujar() {
-        screen.clear();
+        StringBuilder sb = new StringBuilder();
+        sb.append(CURSOR_HOME);
+
         Arma arma = armas.get(armaActual);
         String muniStr = (arma.muni == -1) ? "Inf" : String.valueOf(arma.muni);
 
-        String titulo = !faseJefe ? 
-            "=== LABERINTOS DE MONSTRUOS | NIVEL x" + multVida + " ===" : 
+        String titulo = !faseJefe ?
+            "=== LABERINTOS DE MONSTRUOS | NIVEL x" + multVida + " ===" :
             "=== ¡BATALLA CONTRA EL JEFE! (NIVEL x" + multVida + ") ===";
 
-        tg.setForegroundColor(TextColor.ANSI.WHITE);
-        tg.enableModifiers(SGR.BOLD);
-        tg.putString(0, 0, titulo);
-        tg.disableModifiers(SGR.BOLD);
-
-        tg.putString(0, 1, String.format("PUNTAJE: %05d | Restantes para Jefe: %d", puntaje, Math.max(0, enemigosRestantes)));
-
-        tg.setForegroundColor(TextColor.ANSI.GREEN);
-        tg.putString(0, 2, String.format("Arma: %s Nv.%d (%s) | Armadura: %d", arma.nombre, arma.nvl, muniStr, armadura));
-
-        tg.setForegroundColor(TextColor.ANSI.YELLOW);
-        tg.putString(0, 3, String.format("Granadas[X]: %d | Bombardeo[B]: %d | Cambiar[Espacio]", granadas, bombardeos));
-
-        tg.setForegroundColor(TextColor.ANSI.WHITE);
-        tg.putString(0, 4, "Mover: recto:WASD/diagonal:QEZC | Disparar: recto:IJKL/diagonal:UONM | Tienda: [T]");
+        sb.append(BOLD).append(WHITE).append(titulo).append("          \n").append(RESET);
+        sb.append(String.format("PUNTAJE: %05d | Restantes para Jefe: %d          \n", puntaje, Math.max(0, enemigosRestantes)));
+        sb.append(GREEN).append(String.format("Arma: %s Nv.%d (%s) | Armadura: %d          \n", arma.nombre, arma.nvl, muniStr, armadura)).append(RESET);
+        sb.append(YELLOW).append(String.format("Granadas[X]: %d | Bombardeo[B]: %d | Cambiar[Espacio]          \n", granadas, bombardeos)).append(RESET);
+        sb.append(WHITE).append("Mover: recto:WASD/diagonal:QEZC | Disparar: recto:IJKL/diagonal:UONM | Tienda: [T]\n").append(RESET);
 
         if (!msgAlerta.isEmpty()) {
-            tg.setForegroundColor(TextColor.ANSI.YELLOW);
-            tg.enableModifiers(SGR.BOLD);
-            tg.putString(0, 5, ">> " + msgAlerta + " <<");
-            tg.disableModifiers(SGR.BOLD);
+            sb.append(BOLD).append(YELLOW).append(">> ").append(msgAlerta).append(" <<                              \n").append(RESET);
         } else {
-            tg.setForegroundColor(TextColor.ANSI.WHITE);
-            tg.putString(0, 5, "---------------------------------------------------------------------------");
+            sb.append(WHITE).append("---------------------------------------------------------------------------\n").append(RESET);
         }
 
         for (int y = 0; y < 15; y++) {
             for (int x = 0; x < 40; x++) {
                 char ch = mapa[y][x];
-                tg.disableModifiers(SGR.BOLD);
-
                 if (ch == '#') {
-                    tg.setForegroundColor(TextColor.ANSI.CYAN);
+                    sb.append(CYAN).append(ch).append(RESET);
                 } else if (ch == '@') {
-                    tg.setForegroundColor(TextColor.ANSI.GREEN);
-                    tg.enableModifiers(SGR.BOLD);
+                    sb.append(BOLD).append(GREEN).append(ch).append(RESET);
                 } else if (ch == 'B') {
-                    tg.setForegroundColor(TextColor.ANSI.MAGENTA);
-                    tg.enableModifiers(SGR.BOLD);
+                    sb.append(BOLD).append(MAGENTA).append(ch).append(RESET);
                 } else if (Character.isDigit(ch) || ch == 'M') {
-                    tg.setForegroundColor(TextColor.ANSI.RED);
+                    sb.append(RED).append(ch).append(RESET);
                 } else if (ch == '*' || ch == 'R') {
-                    tg.setForegroundColor(TextColor.ANSI.YELLOW);
-                    tg.enableModifiers(SGR.BOLD);
+                    sb.append(BOLD).append(YELLOW).append(ch).append(RESET);
                 } else {
-                    tg.setForegroundColor(TextColor.ANSI.WHITE);
+                    sb.append(ch);
                 }
-
-                tg.putString(x, y + 5, String.valueOf(ch));
             }
+            sb.append('\n');
         }
-        try {
-            screen.refresh();
-        } catch (IOException ignored) {}
+
+        System.out.print(sb.toString());
+        System.out.flush();
     }
 
     public void spawnEnemigo() {
@@ -292,42 +282,34 @@ public class Bullet {
         mapa[py][px] = '@';
     }
 
-    public void tienda() throws IOException {
+    public void tienda() {
         StringBuilder secuenciaTruco = new StringBuilder();
+        System.out.print(CLEAR_SCREEN);
 
         while (true) {
-            screen.clear();
-            tg.setForegroundColor(TextColor.ANSI.YELLOW);
-            tg.enableModifiers(SGR.BOLD);
-            tg.putString(0, 0, "=== TIENDA DE ARSENAL ===");
-            tg.disableModifiers(SGR.BOLD);
-
-            tg.setForegroundColor(TextColor.ANSI.WHITE);
-            tg.putString(0, 1, "Puntos: " + puntaje);
+            StringBuilder sb = new StringBuilder();
+            sb.append(CURSOR_HOME);
+            sb.append(BOLD).append(YELLOW).append("=== TIENDA DE ARSENAL ===\n").append(RESET);
+            sb.append(WHITE).append("Puntos: ").append(puntaje).append("          \n\n").append(RESET);
 
             Arma p = armas.get(1), e = armas.get(2), r = armas.get(3), c = armas.get(4);
 
-            String[] opciones = {
-                String.format("[1] Mejorar Armadura Nvl %d (%d pts)", armadura + 1, 1000 * armadura),
-                String.format("[2] Escopeta +10 Balas      (600 pts)  Tienes: %d", e.muni),
-                String.format("[3] Ráfaga +30 Balas        (800 pts)  Tienes: %d", r.muni),
-                String.format("[4] Cohetes +1 Misil        (3000 pts) Tienes: %d", c.muni),
-                String.format("[5] Granadas +3             (500 pts)  Tienes: %d", granadas),
-                String.format("[6] Bombardeo +1            (20000 pts)Tienes: %d", bombardeos),
-                String.format("[7] Mejorar Pistola Nvl %d  (%d pts)", p.nvl + 1, 500 * p.nvl),
-                String.format("[8] Mejorar Escopeta Nvl %d (%d pts)", e.nvl + 1, 800 * e.nvl),
-                String.format("[9] Mejorar Ráfaga Nvl %d   (%d pts)", r.nvl + 1, 800 * r.nvl),
-                String.format("[0] Mejorar Cohetes Nvl %d  (%d pts)", c.nvl + 1, 1000 * c.nvl),
-                "Presiona P o ESC para salir."
-            };
+            sb.append(String.format("[1] Mejorar Armadura Nvl %d (%d pts)          \n", armadura + 1, 1000 * armadura));
+            sb.append(String.format("[2] Escopeta +10 Balas      (600 pts)  Tienes: %d          \n", e.muni));
+            sb.append(String.format("[3] Ráfaga +30 Balas        (800 pts)  Tienes: %d          \n", r.muni));
+            sb.append(String.format("[4] Cohetes +1 Misil        (3000 pts) Tienes: %d          \n", c.muni));
+            sb.append(String.format("[5] Granadas +3             (500 pts)  Tienes: %d          \n", granadas));
+            sb.append(String.format("[6] Bombardeo +1            (20000 pts)Tienes: %d          \n", bombardeos));
+            sb.append(String.format("[7] Mejorar Pistola Nvl %d  (%d pts)          \n", p.nvl + 1, 500 * p.nvl));
+            sb.append(String.format("[8] Mejorar Escopeta Nvl %d (%d pts)          \n", e.nvl + 1, 800 * e.nvl));
+            sb.append(String.format("[9] Mejorar Ráfaga Nvl %d   (%d pts)          \n", r.nvl + 1, 800 * r.nvl));
+            sb.append(String.format("[0] Mejorar Cohetes Nvl %d  (%d pts)          \n", c.nvl + 1, 1000 * c.nvl));
+            sb.append("\nPresiona P o ESC para salir.\n");
 
-            for (int i = 0; i < opciones.length; i++) {
-                tg.putString(0, 3 + i, opciones[i]);
-            }
-            screen.refresh();
+            System.out.print(sb.toString());
+            System.out.flush();
 
-            KeyStroke key = screen.readInput();
-            char ch = Character.toLowerCase(key.getCharacter() != null ? key.getCharacter() : ' ');
+            char ch = leerTecla();
 
             if (Character.isLetter(ch)) {
                 secuenciaTruco.append(ch);
@@ -341,7 +323,7 @@ public class Bullet {
                 }
             }
 
-            if (ch == 'p' || key.getKeyType() == KeyType.Escape) break;
+            if (ch == 'p' || ch == 27) break;
 
             int costo = -1;
             Runnable accion = null;
@@ -364,6 +346,7 @@ public class Bullet {
                 accion.run();
             }
         }
+        System.out.print(CLEAR_SCREEN);
     }
 
     public void disparar(int bxDir, int byDir) {
@@ -533,168 +516,137 @@ public class Bullet {
         }
     }
 
-    public void mostrarManual() throws IOException {
-        screen.clear();
-        tg.setForegroundColor(TextColor.ANSI.YELLOW);
-        tg.enableModifiers(SGR.BOLD);
-        tg.putString(5, 1, "==================================================");
-        tg.putString(5, 2, "             MANUAL DE CONTROLES DEL JUEGO        ");
-        tg.putString(5, 3, "==================================================");
-        tg.disableModifiers(SGR.BOLD);
-
-        tg.setForegroundColor(TextColor.ANSI.WHITE);
-        tg.putString(5, 5, "MOVIMIENTO:");
-        tg.putString(5, 6, "- Arriba     [ W ]  ( ^ )         - Arriba-Izq [ Q ]");
-        tg.putString(5, 7, "- Abajo      [ S ]  ( v )         - Arriba-Der [ E ]");
-        tg.putString(5, 8, "- Izquierda  [ A ]  ( < )         - Abajo-Izq  [ Z ]");
-        tg.putString(5, 9, "- Derecha    [ D ]  ( > )         - Abajo-Der  [ C ]");
-
-        tg.putString(5, 11, "DISPARO:");
-        tg.putString(5, 12, "- Arriba     [ I ]  ( ^ )         - Arriba-Izq [ U ]");
-        tg.putString(5, 13, "- Abajo      [ K ]  ( v )         - Arriba-Der [ O ]");
-        tg.putString(5, 14, "- Izquierda  [ J ]  ( < )         - Abajo-Izq  [ N ]");
-        tg.putString(5, 15, "- Derecha    [ L ]  ( > )         - Abajo-Der  [ M ]");
-
-        tg.putString(5, 17, "ACCIONES Y ESPECIALES:");
-        tg.putString(5, 18, "- Cambiar Arma: [ ESPACIO ]       - Tienda: [ T ]");
-        tg.putString(5, 19, "- Granada:      [ X ]             - Bombardeo: [ B ]");
-        
-        tg.setForegroundColor(TextColor.ANSI.GREEN);
-        tg.putString(5, 21, "[ Presiona CUALQUIER TECLA para regresar ]");
-        
-        screen.refresh();
-        screen.readInput();
+    public void mostrarManual() {
+        System.out.print(CLEAR_SCREEN);
+        System.out.println(BOLD + YELLOW + "==================================================");
+        System.out.println("             MANUAL DE CONTROLES DEL JUEGO        ");
+        System.out.println("==================================================" + RESET);
+        System.out.println("\nMOVIMIENTO:");
+        System.out.println("- Arriba     [ W ]  ( ^ )         - Arriba-Izq [ Q ]");
+        System.out.println("- Abajo      [ S ]  ( v )         - Arriba-Der [ E ]");
+        System.out.println("- Izquierda  [ A ]  ( < )         - Abajo-Izq  [ Z ]");
+        System.out.println("- Derecha    [ D ]  ( > )         - Abajo-Der  [ C ]");
+        System.out.println("\nDISPARO:");
+        System.out.println("- Arriba     [ I ]  ( ^ )         - Arriba-Izq [ U ]");
+        System.out.println("- Abajo      [ K ]  ( v )         - Arriba-Der [ O ]");
+        System.out.println("- Izquierda  [ J ]  ( < )         - Abajo-Izq  [ N ]");
+        System.out.println("- Derecha    [ L ]  ( > )         - Abajo-Der  [ M ]");
+        System.out.println("\nACCIONES Y ESPECIALES:");
+        System.out.println("- Cambiar Arma: [ ESPACIO ]       - Tienda: [ T ]");
+        System.out.println("- Granada:      [ X ]             - Bombardeo: [ B ]");
+        System.out.println(GREEN + "\n[ Presiona CUALQUIER TECLA para regresar ]" + RESET);
+        leerTecla();
     }
 
-    public void mainLoop() throws IOException {
-        while (true) {
-            screen.clear();
-            tg.setForegroundColor(TextColor.ANSI.GREEN);
-            tg.enableModifiers(SGR.BOLD);
-            tg.putString(5, 2, "=== LABERINTOS DE MONSTRUOS ===");
-            tg.disableModifiers(SGR.BOLD);
+    public void mainLoop() {
+        System.out.print(HIDE_CURSOR);
+        try {
+            while (true) {
+                System.out.print(CLEAR_SCREEN);
+                System.out.println(BOLD + GREEN + "\n   === LABERINTOS DE MONSTRUOS ===\n" + RESET);
+                System.out.println("   Presiona ENTER para Iniciar");
+                System.out.println("   Presiona H para ver el MANUAL");
+                System.out.println("   Presiona P para Salir");
 
-            tg.setForegroundColor(TextColor.ANSI.WHITE);
-            tg.putString(5, 4, "Presiona ENTER para Iniciar");
-            tg.putString(5, 5, "Presiona H para ver el MANUAL");
-            tg.putString(5, 6, "Presiona P para Salir");
-            screen.refresh();
-
-            KeyStroke k = screen.readInput();
-            char kc = Character.toLowerCase(k.getCharacter() != null ? k.getCharacter() : ' ');
-            
-            if (kc == 'p' || k.getKeyType() == KeyType.Escape) break;
-            
-            if (kc == 'h') {
-                mostrarManual();
-                continue;
-            }
-            
-            if (k.getKeyType() != KeyType.Enter) continue;
-
-            reiniciarStatsGlobales();
-
-            while (!juegoPerdido && !juegoGanado) {
-                msgAlerta = "";
-
-                if (enemigosRestantes <= 0 && !faseJefe) {
-                    faseJefe = true;
-                    spawnJefe();
-                } else if (faseJefe && jefe == null) {
-                    if (multVida >= 15) {
-                        juegoGanado = true;
-                        continue;
-                    } else {
-                        multVida++;
-                        enemigosMeta = (int) Math.round(enemigosMeta * 1.5);
-                        msgAlerta = "¡JEFE DERROTADO! SUBES DE NIVEL (Meta: " + enemigosMeta + ")";
-                        dibujar();
-                        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
-                        iniciarNivel();
-                        continue;
-                    }
+                char kc = leerTecla();
+                if (kc == 'p' || kc == 27) break;
+                if (kc == 'h') {
+                    mostrarManual();
+                    continue;
                 }
+                if (kc != 13) continue; // 13 = ENTER
 
-                dibujar();
+                reiniciarStatsGlobales();
+                System.out.print(CLEAR_SCREEN);
 
-                KeyStroke t = screen.readInput();
-                char c = Character.toLowerCase(t.getCharacter() != null ? t.getCharacter() : ' ');
-                boolean turnoValido = false;
+                while (!juegoPerdido && !juegoGanado) {
+                    msgAlerta = "";
 
-                if (c == 'p' || t.getKeyType() == KeyType.Escape) break;
-                else if (c == ' ') armaActual = (armaActual < 4) ? armaActual + 1 : 1;
-                else if (c == 't') tienda();
-                else if (c == 'x' && granadas > 0) {
-                    granadas--;
-                    explosion(px, py, 1, 5);
-                    turnoValido = true;
-                } else if (c == 'b' && bombardeos > 0) {
-                    bombardeos--;
-                    if (armadura >= 8) {
-                        armadura -= 8;
-                        List<Enemigo> listaBombardeo = new ArrayList<>(enemigos);
-                        if (jefe != null) listaBombardeo.add(jefe);
-                        for (Enemigo ene : listaBombardeo) {
-                            explosion(ene.x, ene.y, 0, 20);
+                    if (enemigosRestantes <= 0 && !faseJefe) {
+                        faseJefe = true;
+                        spawnJefe();
+                    } else if (faseJefe && jefe == null) {
+                        if (multVida >= 15) {
+                            juegoGanado = true;
+                            continue;
+                        } else {
+                            multVida++;
+                            enemigosMeta = (int) Math.round(enemigosMeta * 1.5);
+                            msgAlerta = "¡JEFE DERROTADO! SUBES DE NIVEL (Meta: " + enemigosMeta + ")";
+                            dibujar();
+                            try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
+                            iniciarNivel();
+                            continue;
                         }
-                    } else {
-                        juegoPerdido = true;
-                        msgAlerta = "El bombardeo te destruyó.";
                     }
-                    turnoValido = true;
-                } else if (MOVIMIENTO.containsKey(c)) {
-                    int[] dir = MOVIMIENTO.get(c);
-                    if (mapa[py + dir[1]][px + dir[0]] == ' ') {
-                        mapa[py][px] = ' ';
-                        px += dir[0];
-                        py += dir[1];
-                        mapa[py][px] = '@';
+
+                    dibujar();
+
+                    char c = leerTecla();
+                    boolean turnoValido = false;
+
+                    if (c == 'p' || c == 27) break;
+                    else if (c == ' ') armaActual = (armaActual < 4) ? armaActual + 1 : 1;
+                    else if (c == 't') tienda();
+                    else if (c == 'x' && granadas > 0) {
+                        granadas--;
+                        explosion(px, py, 1, 5);
+                        turnoValido = true;
+                    } else if (c == 'b' && bombardeos > 0) {
+                        bombardeos--;
+                        if (armadura >= 8) {
+                            armadura -= 8;
+                            List<Enemigo> listaBombardeo = new ArrayList<>(enemigos);
+                            if (jefe != null) listaBombardeo.add(jefe);
+                            for (Enemigo ene : listaBombardeo) {
+                                explosion(ene.x, ene.y, 0, 20);
+                            }
+                        } else {
+                            juegoPerdido = true;
+                            msgAlerta = "El bombardeo te destruyó.";
+                        }
+                        turnoValido = true;
+                    } else if (MOVIMIENTO.containsKey(c)) {
+                        int[] dir = MOVIMIENTO.get(c);
+                        if (mapa[py + dir[1]][px + dir[0]] == ' ') {
+                            mapa[py][px] = ' ';
+                            px += dir[0];
+                            py += dir[1];
+                            mapa[py][px] = '@';
+                            turnoValido = true;
+                        }
+                    } else if (DISPARO.containsKey(c)) {
+                        int[] dir = DISPARO.get(c);
+                        disparar(dir[0], dir[1]);
                         turnoValido = true;
                     }
-                } else if (DISPARO.containsKey(c)) {
-                    int[] dir = DISPARO.get(c);
-                    disparar(dir[0], dir[1]);
-                    turnoValido = true;
+
+                    if (turnoValido && !juegoPerdido && !juegoGanado) {
+                        turnos++;
+                        moverEnemigos();
+                        spawnEnemigo();
+                    }
                 }
 
-                if (turnoValido && !juegoPerdido && !juegoGanado) {
-                    turnos++;
-                    moverEnemigos();
-                    spawnEnemigo();
+                if (juegoPerdido || juegoGanado) {
+                    System.out.print(CLEAR_SCREEN);
+                    if (juegoGanado) {
+                        System.out.println(BOLD + YELLOW + "\n   ¡VICTORIA SUPREMA!" + RESET);
+                        System.out.println("   Has superado el Nivel 15 y escapado del laberinto.");
+                    } else {
+                        System.out.println(BOLD + RED + "\n   ¡HAS MUERTO!" + RESET);
+                    }
+                    System.out.println("\n   Puntaje Final: " + puntaje);
+                    System.out.println("\n   Presiona cualquier tecla para volver al menú...");
+                    leerTecla();
                 }
             }
-
-            if (juegoPerdido || juegoGanado) {
-                screen.clear();
-                if (juegoGanado) {
-                    tg.setForegroundColor(TextColor.ANSI.YELLOW);
-                    tg.enableModifiers(SGR.BOLD);
-                    tg.putString(10, 4, "¡VICTORIA SUPREMA!");
-                    tg.disableModifiers(SGR.BOLD);
-                    tg.setForegroundColor(TextColor.ANSI.WHITE);
-                    tg.putString(10, 5, "Has superado el Nivel 15 y escapado del laberinto.");
-                } else {
-                    tg.setForegroundColor(TextColor.ANSI.RED);
-                    tg.enableModifiers(SGR.BOLD);
-                    tg.putString(10, 4, "¡HAS MUERTO!");
-                    tg.disableModifiers(SGR.BOLD);
-                }
-
-                tg.setForegroundColor(TextColor.ANSI.WHITE);
-                tg.putString(10, 7, "Puntaje Final: " + puntaje);
-                tg.putString(10, 9, "Presiona cualquier tecla para volver al menú...");
-                screen.refresh();
-                screen.readInput();
-            }
+        } finally {
+            System.out.print(SHOW_CURSOR + RESET + CLEAR_SCREEN);
         }
-        screen.stopScreen();
     }
 
     public static void main(String[] args) {
-        try {
-            new Bullet().mainLoop();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Bullet().mainLoop();
     }
 }
